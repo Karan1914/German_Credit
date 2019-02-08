@@ -43,6 +43,28 @@ head(GermanCredit)
 
 str(GermanCredit)
 
+colnames(GermanCredit$`OBS#`)
+GermanCredit$`OBS#`<-NULL
+
+
+
+
+cols <- c("CHK_ACCT","HISTORY","NEW_CAR","USED_CAR","FURNITURE","NUM_CREDITS","RADIO/TV","EDUCATION","RETRAINING","SAV_ACCT","EMPLOYMENT","PERSONAL_STATUS","CO-APPLICANT","GUARANTOR","PRESENT_RESIDENT","REAL_ESTATE","PROP_UNKN_NONE","OTHER_INSTALL","RENT","OWN_RES","JOB","TELEPHONE","FOREIGN","RESPONSE")
+# MyData[cols] <- sapply(MyData[cols],as.factor()))
+GermanCredit[,cols] <-  data.frame(apply(GermanCredit[cols], 2, as.factor))
+GermanCredit$INSTALL_RATE <- as.numeric(GermanCredit$INSTALL_RATE)
+# sapply(GermanCredit, class)
+str(GermanCredit)
+
+
+
+
+
+
+
+
+
+
 View(GermanCredit)
 #GOOD : BAD ratio
 table(GermanCredit$RESPONSE)
@@ -101,16 +123,6 @@ str(GermanCredit)
 
 str(GermanCredit)
 
-
-colnames(GermanCredit$`OBS#`)
-GermanCredit$`OBS#`<-NULL
-
-cols <- c("CHK_ACCT","HISTORY","NEW_CAR","USED_CAR","FURNITURE","NUM_CREDITS","RADIO/TV","EDUCATION","RETRAINING","SAV_ACCT","EMPLOYMENT","PERSONAL_STATUS","CO-APPLICANT","GUARANTOR","PRESENT_RESIDENT","REAL_ESTATE","PROP_UNKN_NONE","OTHER_INSTALL","RENT","OWN_RES","JOB","TELEPHONE","FOREIGN","RESPONSE")
-# MyData[cols] <- sapply(MyData[cols],as.factor()))
-GermanCredit[,cols] <-  data.frame(apply(GermanCredit[cols], 2, as.factor))
-GermanCredit$INSTALL_RATE <- as.numeric(GermanCredit$INSTALL_RATE)
-# sapply(GermanCredit, class)
-str(GermanCredit)
 
 ##################################################################################
 
