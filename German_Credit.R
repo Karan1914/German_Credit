@@ -38,32 +38,12 @@ install.packages("readxl")
 library("readxl")
 
 # Read CSV into R
-GermanCredit <- read_excel("GermanCredit.xls")
+GermanCredit_assgt1_S19 <- read_excel("Downloads/GermanCredit_assgt1_S19.xls")
+GermanCredit <- GermanCredit_assgt1_S19
+View(GermanCredit)
 head(GermanCredit)
 
 str(GermanCredit)
-
-colnames(GermanCredit$`OBS#`)
-GermanCredit$`OBS#`<-NULL
-
-
-
-
-cols <- c("CHK_ACCT","HISTORY","NEW_CAR","USED_CAR","FURNITURE","NUM_CREDITS","RADIO/TV","EDUCATION","RETRAINING","SAV_ACCT","EMPLOYMENT","PERSONAL_STATUS","CO-APPLICANT","GUARANTOR","PRESENT_RESIDENT","REAL_ESTATE","PROP_UNKN_NONE","OTHER_INSTALL","RENT","OWN_RES","JOB","TELEPHONE","FOREIGN","RESPONSE")
-# MyData[cols] <- sapply(MyData[cols],as.factor()))
-GermanCredit[,cols] <-  data.frame(apply(GermanCredit[cols], 2, as.factor))
-GermanCredit$INSTALL_RATE <- as.numeric(GermanCredit$INSTALL_RATE)
-# sapply(GermanCredit, class)
-str(GermanCredit)
-
-
-
-
-
-
-
-
-
 
 View(GermanCredit)
 #GOOD : BAD ratio
@@ -93,8 +73,8 @@ summary(GermanCredit)
 table(GermanCredit$PERSONAL_STATUS)
 sum(is.na(GermanCredit$PERSONAL_STATUS))
 #If we look at the NA values in Personal Status(It can have values 1,2,3), Assuming that these NA values could be by single people.
-#We simply replace NA by 1 instead of 2 and 3. [NOT SURE THOUGH]
-GermanCredit$PERSONAL_STATUS[is.na(GermanCredit$PERSONAL_STATUS)] <- 1
+#We simply replace NA by 4(new category which is unassigned) instead of 2 and 3. [NOT SURE THOUGH]
+GermanCredit$PERSONAL_STATUS[is.na(GermanCredit$PERSONAL_STATUS)] <- 4
 #There are 9 more NA values left in the AGE variable. Lets replace those values by the Median
 GermanCredit$AGE[is.na(GermanCredit$AGE)] <- median(GermanCredit$AGE, na.rm=TRUE)
 
@@ -111,7 +91,7 @@ count(GermanCredit[18])
 count(GermanCredit[26])
 
 #Create Barplots of the variables
-barplot(table(GermanCredit$HISTORY), ylab = "Numbers", beside=TRUE)
+barplot(table(GermanCredit$PERSONAL_STATUS), ylab = "Numbers", beside=TRUE)
 library(ggplot2)        
 ggplot(data = GermanCredit, aes(GermanCredit$HISTORY))
 
@@ -124,5 +104,23 @@ str(GermanCredit)
 str(GermanCredit)
 
 
-##################################################################################
+colnames(GermanCredit$`OBS#`)
+GermanCredit$`OBS#`<-NULL
+
+cols <- c("CHK_ACCT","HISTORY","NEW_CAR","USED_CAR","FURNITURE","NUM_CREDITS","RADIO/TV","EDUCATION","RETRAINING","SAV_ACCT","EMPLOYMENT","PERSONAL_STATUS","CO-APPLICANT","GUARANTOR","PRESENT_RESIDENT","REAL_ESTATE","PROP_UNKN_NONE","OTHER_INSTALL","RENT","OWN_RES","JOB","TELEPHONE","FOREIGN","RESPONSE")
+# MyData[cols] <- sapply(MyData[cols],as.factor()))
+GermanCredit[,cols] <-  data.frame(apply(GermanCredit[cols], 2, as.factor))
+GermanCredit$INSTALL_RATE <- as.numeric(GermanCredit$INSTALL_RATE)
+# sapply(GermanCredit, class)
+str(GermanCredit)
+
+ ##################################################################################
+
+
+
+
+library(rpart)
+rpmodel<-rpart(GermanCredit$RESPONSE~. , data= GermanCredit, method = "class")
+rpart.plot::prp(rpmodel, type=2, extra=1)
+
 
