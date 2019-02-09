@@ -43,6 +43,8 @@ library(rpart)
 # #Read a Tab seperated file
 # Tabseperated <- read.table("c:/TheDataIWantToReadIn.txt", sep="\t", header=TRUE)
 
+
+
 ######################################### Data loading and view of the dataset ######################################### 
 
 # Read XLS into R
@@ -56,11 +58,12 @@ str(GermanCredit)
 # View of the complete dataset
 View(GermanCredit)
 
-###################################################################################################################### 
+ 
 
 
 
-######################################### Conversion of the Variables to different datatype ################################## 
+################################# Conversion of the Variables to different datatype ##############################
+
 #   How to convert a variable to different data type?
 str(GermanCredit)
 
@@ -75,10 +78,12 @@ GermanCredit[,cols] <-  data.frame(apply(GermanCredit[cols], 2, as.factor))
 # sapply(GermanCredit, class)
 str(GermanCredit)
 
-#################################################################################################################################
 
 
-# Data Wrangling 
+
+############################################## Data Wrangling  #############################################
+
+
 
 #GOOD : BAD ratio
 table(GermanCredit$RESPONSE)
@@ -130,12 +135,12 @@ library(ggplot2)
 ggplot(data = GermanCredit, aes(GermanCredit$HISTORY))
 
 str(GermanCredit)
-#################################################################################################################################
+
 
 
 ####### Univariate Analysis of Numerical Variables (duration,amount,age,num_dependents,install_rate) ########
 
-#################################################################################################################################
+
 
 
 str(GermanCredit)
@@ -145,17 +150,13 @@ describe(GermanCredit$NUM_DEPENDENTS)
 describe(GermanCredit$INSTALL_RATE)
 describe(GermanCredit$AGE)
 
-#################################################################################################################################
 
 
 
-#################################################################################################################################
+
+
 
 ####################### Graphical univariate analysis for dependent variable Response ########################################
-
-#################################################################################################################################
-
-
 
 tab<-table(GermanCredit$RESPONSE)
 ptab<-prop.table(tab)
@@ -297,16 +298,8 @@ barplot(ptab, main = "Bar Plot",
 box()
 
 summary(GermanCredit$RETRAINING)
-#################################################################################################################################
-
-
-
-#################################################################################################################################
 
 ############################  Adding Decision Tree for the Dataset #############################
-
-#################################################################################################################################
-
 
 rpmodel<-rpart(GermanCredit$RESPONSE~. , data= GermanCredit, method = "class")
 rpart.plot::prp(rpmodel, type=2, extra=1)
