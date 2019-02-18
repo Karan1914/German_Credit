@@ -14,10 +14,15 @@ setwd("/Users/karan/Documents/Data_mining_jan/datasets")
 
 #Load Libraries:
 install.packages("readxl")
+install.packages('cowplot')
 install.packages("plyr")
 install.packages("dplyr")
 install.packages("C50")
 install.packages("caret")
+install.packages("e1071")
+library(C50)
+library(caret)
+library(e1071)
 library(plyr)
 library(readxl)
 library(dplyr)
@@ -26,8 +31,9 @@ library(corrplot)
 library(rpart)
 library(lift)
 library(gdata)
-install.packages(caret)
 library (caret)
+library(ggplot2)  
+library(cowplot)
 
 
 # Read XLS into R
@@ -37,7 +43,7 @@ head(GermanCredit)    # a quick glimpse of the dataset
 
 str(GermanCredit)     # structure of the dataset
 
-View(GermanCredit)    # View of the complete dataset
+summary(GermanCredit)    # View of the complete dataset
 
 # CLEAN THE DATA
 ################# Remove unnecessary column 'Observation' by converting to column name ########################### 
@@ -45,7 +51,7 @@ colnames(GermanCredit$`OBS#`)
 GermanCredit$`OBS#`<-NULL
 GermanCredit<-rename.vars(GermanCredit,from = "CO-APPLICANT",to="COAPPLICANT")
 GermanCredit<-rename.vars(GermanCredit,from = "RADIO/TV",to="RADIO")
-GermanCredit<-rename.vars(GermanCredit,from = "CHKACCT",to="CHKACCT")
+GermanCredit<-rename.vars(GermanCredit,from = "CHK_ACCT",to="CHKACCT")
 
 ################# Treat NA/Missing values #######################################################
 
@@ -111,7 +117,7 @@ count(GermanCredit[26])
 
 #Create Barplots of the variables
 barplot(table(GermanCredit$HISTORY), ylab = "Numbers", beside=TRUE)
-library(ggplot2)        
+     
 ggplot(data = GermanCredit, aes(GermanCredit$HISTORY)) + geom_bar() 
 
 str(GermanCredit)
@@ -274,8 +280,7 @@ summary(GermanCredit$RETRAINING)
 # BIVARIATE ANALYSIS DATA EXPLORATION WITH DEPENDENT VARIABLE 'RESPONSE'
 
 #bivariate analysis of numeric independent variables (DURATION, AMOUNT, INSTALL_RATE, AGE) vs. factor dependent variable (RESPONSE)
-install.packages('cowplot')
-library(cowplot)
+
 
 # check the visuals...boxplot and density curve
 a <- GermanCredit %>% ggplot(aes(RESPONSE, DURATION, fill = RESPONSE))+
@@ -349,7 +354,10 @@ chisq.test(GermanCredit$RESPONSE, GermanCredit$NUM_DEPENDENTS)$p.value
 chisq.test(GermanCredit$RESPONSE, GermanCredit$TELEPHONE)$p.value
 chisq.test(GermanCredit$RESPONSE, GermanCredit$FOREIGN)$p.value
 
-# From these chi-squared tests, we can see that FURNITURE, RETRAINING, CO-APPLICANT, GUARANTOR, PRESENT RESIDENT, JOB, NUMBER OF DEPENDENTS, and TELEPHONE do not have statistically significant relationships, with pvalues > .05. So likely, these factors will not be important in our decision tree.
+# From these chi-squared tests, we can see that 
+# FURNITURE, RETRAINING, CO-APPLICANT, GUARANTOR, PRESENT RESIDENT, JOB, NUMBER OF DEPENDENTS, 
+# and TELEPHONE do not have statistically significant relationships, with pvalues > .05.
+# So likely, these factors will not be important in our decision tree.
 
 
 ##########                      QUESTION 2.                        ##########                      
@@ -454,6 +462,8 @@ plot(seq(nrow(GermanCreditSc)), GermanCreditSc$cumBadCredit,type = "l", xlab='#c
 #value of lift in the top decile
 TopDecileLift(GermanCreditSc$score, GermanCreditSc$RESPONSE)
 
+
+
 # Question: Do we think this is a robust model? 
 
 # Solution: 
@@ -466,11 +476,7 @@ TopDecileLift(GermanCreditSc$score, GermanCreditSc$RESPONSE)
 
 
 
-
-
-
-
-
+####################### Question 3  ###########################
 ######################## CREATE TRAINING AND TESTING DATASETS ###########################
 # 50-50 split
 #split the data into training and test(validation) sets - 50% for training, rest for validation
@@ -483,34 +489,29 @@ dim(GermanCreditTrn)
 dim(GermanCreditTst)
 
 
-
-
-
-
-
-
-
 ############### BUILD THE RPART DECISION TREE AND CHECK PERFORMANCE ####################################
 
-# KARAN AND SHUBHAM, THIS IS OUR BEST RPART MODEL. YOU CAN CHANGE PARAMETERS AND REMOVE #COMMENT LINES, TO RUN TESTS
+# THIS IS OUR BEST RPART MODEL. YOU CAN CHANGE PARAMETERS AND REMOVE #COMMENT LINES, TO RUN TESTS
 rpModel2=rpart(RESPONSE ~ ., data=GermanCreditTrn, method="class", control = rpart.control(cp = 0.03, minsplit = 50, minbucket = 10))
-# summary(rpModel2)
-# print(rpModel2)
+summary(rpModel2)
+print(rpModel2)
 #plot the model
-# rpart.plot::prp(rpModel2, type=2, extra=1)
+rpart.plot::prp(rpModel2, type=2, extra=1)
 
 # PERFORMANCE ANALYSIS OF RPART MODEL
 #training data confusion table
-#table(pred = predict(rpModel2, GermanCreditTrn, type='class'), true=GermanCreditTrn$RESPONSE)
+table(pred = predict(rpModel2, GermanCreditTrn, type='class'), true=GermanCreditTrn$RESPONSE)
 #Accuracy of model2 on training data
-#mean(predict(rpModel2,GermanCreditTrn, type="class") == GermanCreditTrn$RESPONSE)
+mean(predict(rpModel2,GermanCreditTrn, type="class") == GermanCreditTrn$RESPONSE)      #76%
 
 #run the test data through model2, and create confusion matrix
 cm <- table(pred=predict(rpModel2,GermanCreditTst, type="class"), true=GermanCreditTst$RESPONSE)
 cm
 #Check Overall Accuracy on testing data
 a <- mean(predict(rpModel2,GermanCreditTst, type="class") == GermanCreditTst$RESPONSE)
-a
+a   # Overall Accuracy on Testing data = 73.4%
+
+
 # check overall error rate
 error.rate <- 1-a
 error.rate
@@ -531,20 +532,13 @@ f1
 
 
 
-
-
-
-
-
+############## Question 3 (b) #####################
 
 ######################## BUILD A C.50 DECISION TREE AND EVALUATE PERFORMANCE #######################
 
-install.packages("e1071")
-library(C50)
-library(caret)
-library(e1071)
 
-# KARAN AND SHUBHAM, THIS IS OUR BEST C50 MODEL. YOU CAN CHANGE PARAMETERS TO RUN TESTS
+
+# THIS IS OUR BEST C50 MODEL. 
 c50model <- C5.0(RESPONSE~., data = GermanCreditTrn, trials = 100, control = C5.0Control(minCases = 50, subset = T, CF = 0.25, winnow = F))
 summary(c50model)
 p <- predict(c50model, newdata = GermanCreditTst, type = 'class')
@@ -564,13 +558,7 @@ postResample(predict(rule_mod, GermanCreditTst), GermanCreditTst$RESPONSE)
 
 
 
-
-
-
-
-
-
-#################### THIS CODE CONTAINS THRESHOLD CHANGE, LIFT AND ROC CURVES, BUT NEEDS TO BE COMPLETED ##############
+#################### THIS CODE CONTAINS THRESHOLD CHANGE, LIFT AND ROC CURVES ##############
 
 # Try different paramters and reevaluate performance....
 ## if we try different thresholds, the maximum accuracy seems to be about 0.5, 
@@ -695,15 +683,15 @@ print(c(OptimalCutoff=optCutoff, FPRAte=OptCutoff_FPRate, TPRate =OptCutoff_TPRa
 
 
 
+############# Question 4 ###################
 
-###### Question 4 #########
 
 ######################## CREATE TRAINING AND TESTING DATASETS ###########################
 # 70-30 split
-#split the data into training and test(validation) sets - 50% for training, rest for validation
+#split the data into training and test(validation) sets - 70% for training, rest for validation
 nr=nrow(GermanCredit) # gets the number of rows
 set.seed(123) # set seed for reproducible results
-trnIndex = sample(1:nr, size = round(0.7*nr), replace=FALSE) #get a random 50%sample of row-indices
+trnIndex = sample(1:nr, size = round(0.7*nr), replace=FALSE) #get a random 70% sample of row-indices
 GermanCreditTrn=GermanCredit[trnIndex,]   #training data with the randomly selected row-indices
 GermanCreditTst = GermanCredit[-trnIndex,]  #test data with the other row-indices
 dim(GermanCreditTrn) 
@@ -712,7 +700,7 @@ dim(GermanCreditTst)
 
 
 
-
+###Calculating the Profits and cumulative profits
 PROFITVAL=100
 COSTVAL=-500
 
@@ -736,7 +724,8 @@ maxProfit_Ind = which.max(prLifts$cumProfits)
 maxProfit_score = prLifts$scoreTst[maxProfit_Ind]
 print(c(maxProfit = maxProfit, scoreTst = maxProfit_score))
 
-CTHRESH=0.3
+
+CTHRESH=0.5
 predProbTrn=predict(rpModel2, GermanCreditTst, type='prob')
 #Confusion table
 predTrn = ifelse(predProbTrn[, '0'] >= CTHRESH, '0', '1')
@@ -761,7 +750,7 @@ plot(c50model)
 
 
 
-
+######### Question 5 ##########
 
 # Develop a full tree and then prune it
 
@@ -776,7 +765,7 @@ rpart.plot::prp(rpModel2cp, type=2, extra=1)
 table(pred=predict(rpModel2cp,GermanCreditTst, type="class"), true=GermanCreditTst$RESPONSE)
 #Accuracy of the full, unpruned model on testing data
 mean(predict(rpModel2cp,GermanCreditTst, type="class") == GermanCreditTst$RESPONSE)
-# our accuracy on the testing data fell to about 70%.
+# our accuracy on the testing data fell to about 72%.
 #we can then prune the tree using the best cp value
 #first, check the errors for different levels of CP
 printcp(rpModel2cp)
@@ -786,33 +775,183 @@ plotcp(rpModel2cp)
 # The line in the plot above shows the 1 std err above the minimum error. 
 # So, which cp level would you use for #the best pruned tree?
 # 0.19 seems to be the best value of complexity
-rpModel2_pruned = prune(rpModel2cp, cp=0.19)
+rpModel2_pruned = prune(rpModel2cp, cp=0.01)
 #evaluate performance of pruned model
-mean(predict(rpModel2_pruned,GermanCreditTst, type="prob") == GermanCreditTst$RESPONSE)
-# here we have increased overall performance from 70% to 71%, using complexity 0.19. This is the same accuracy as the default parameters in rpart, and likely the cp chosen by the default parameters.
+mean(predict(rpModel2_pruned,GermanCreditTst, type="class") == GermanCreditTst$RESPONSE)
+# here we have increased overall performance from 72% to 74%, using complexity 0.01. 
+# This is the same accuracy as the default parameters in rpart, and likely the cp chosen by the default parameters.
+
 
 # smoothed values for these ‘probabilities’ for “Good” and “Bad” cases in these nodes
 # calculate the Laplace smoothing and m-estimate smoothing values.
 
 
 
+# Probabilities when laplace = 0 
+nb_default <- naiveBayes(RESPONSE ~ ., data= GermanCreditTrn)
+
+
+default_pred <- predict(nb_default, GermanCreditTst, type="class")
+
+
+table(default_pred, GermanCreditTst$RESPONSE,dnn=c("Prediction","Actual"))
+
+# Laplace Smoothing
+# Probabilities when laplace = 1 
+
+nb_laplace1 <- naiveBayes(RESPONSE~., data=GermanCreditTrn, laplace=1)
+laplace1_pred <- predict(nb_laplace1, GermanCreditTst, type="class")
+
+table(laplace1_pred, GermanCreditTst$RESPONSE,dnn=c("Prediction","Actual"))
+
+
+# After Laplace smoothing we have observed  that the conditional probabilities 
+# for the two models are now different. 
+# The higher the laplace smoothing value, the more you are making the models the same.
+
+
+
+######### Question 6 ##############
+
+# PROFITVAL=100
+# COSTVAL=-500
+# 
+# scoreTst=predict(rpModel2, GermanCreditTrn, type="prob")[,'1']
+# prLifts=data.frame(scoreTst)
+# prLifts=cbind(prLifts, GermanCreditTrn$RESPONSE)
+# #check what is in prLifts ....head(prLifts)
+# 
+# prLifts=prLifts[order(-scoreTst) ,]  #sort by descending score
+# 
+# #add profit and cumulative profits columns
+# prLifts<-prLifts %>% mutate(profits=ifelse(prLifts$`GermanCreditTrn$RESPONSE`=='1', PROFITVAL, COSTVAL), cumProfits=cumsum(profits))
+# head(prLifts)
+# plot(prLifts$cumProfits)
+# 
+# mean(scoreTst==prLifts$cumProfits)
+# 
+# #Calculate score
+# maxProfit= max(prLifts$cumProfits)
+# maxProfit_Ind = which.max(prLifts$cumProfits)
+# maxProfit_score = prLifts$scoreTst[maxProfit_Ind]
+# print(c(maxProfit = maxProfit, scoreTst = maxProfit_score))
+
+
+################################
+
+nr=nrow(GermanCredit) # gets the number of rows
+
+set.seed(123) # set seed for reproducible results
+trnIndex = sample(1:nr, size = round(0.7*nr), replace=FALSE) #get a random 50%sample of row-indices
+GermanCreditTrn=GermanCredit[trnIndex,]   #training data with the randomly selected row-indices
+GermanCreditTst = GermanCredit[-trnIndex,]  #test data with the other row-indices
+dim(GermanCreditTrn) 
+dim(GermanCreditTst)
+CTHRESH = 0.50
+costMatrix <- matrix(c(0,100,500, 0), byrow=TRUE, nrow=2)
+colnames(costMatrix) <- c('Predict Good','Predict Bad')
+rownames(costMatrix) <- c('Actual Good','Actual Bad')
+Tree_Cost = rpart(RESPONSE ~ ., data=GermanCreditTst, method="class", parms = list( prior = c(.70,.30), loss = costMatrix, split = "information"))
+# Finding the model's predictions on the training data
+prediction_Trn=predict(Tree_Cost, GermanCreditTst, type='class')
+#Confusion table
+table(pred = prediction_Trn, true=GermanCreditTst$RESPONSE)
+PROFITVAL=100
+COSTVAL=-500
+
+scoreTst=predict(rpModel2, GermanCreditTrn, type="prob")[,'1']
+prLifts=data.frame(scoreTst)
+prLifts=cbind(prLifts, GermanCreditTrn$RESPONSE)
+#check what is in prLifts ....head(prLifts)
+
+prLifts=prLifts[order(-scoreTst) ,]  #sort by descending score
+
+#add profit and cumulative profits columns
+prLifts<-prLifts %>% mutate(profits=ifelse(prLifts$`GermanCreditTrn$RESPONSE`=='1', PROFITVAL, COSTVAL), cumProfits=cumsum(profits))
+head(prLifts)
+plot(prLifts$cumProfits)
+
+mean(scoreTst==prLifts$cumProfits)
+
+#find the score coresponding to the max profit
+maxProfit= max(prLifts$cumProfits)
+maxProfit_Ind = which.max(prLifts$cumProfits)
+maxProfit_score = prLifts$testscore[maxProfit_Ind]
+print(c(maxProfit = maxProfit, scoreTst = maxProfit_score))
+
+#Calculate score
+nr=nrow(GermanCredit) 
+trnSplit1 = sample(1:nr, size = round(0.7*nr), replace=FALSE) #get a random 50%sample of row-indices
+g_train1=GermanCredit[trnSplit1,]   #training data with the randomly selected row-indices
+g_test1 = GermanCredit[-trnSplit1,]  #test data with the other row-indices
+
+CTHRESH = 0.83
+
+costMatrix <- matrix(c(0,100,500, 0), byrow=TRUE, nrow=2)
+colnames(costMatrix) <- c('Predict Good','Predict Bad')
+rownames(costMatrix) <- c('Actual Good','Actual Bad')
+
+Tree_Cost = rpart(RESPONSE ~ ., data=g_test1, method="class", parms = list( prior = c(.70,.30), loss = costMatrix, split = "information"))
+#Obtain the model's predictions on the training data
+prediction_Trn=predict(Tree_Cost, g_test1, type='class')
+#Confusion table
+table(pred = prediction_Trn, true=g_test1$RESPONSE)
+#Accuracy
+mean(prediction_Trn==g_test1$RESPONSE)
+                                                                            
+t1 = costMatrix[2,1]/(costMatrix[2,1] + costMatrix[1,2])
+t1  
+modelForPruning <- rpart(RESPONSE ~ ., data=g_test1, method="class",  parms = list(split = 'information'))
+                                                                            
+printcp(modelForPruning)
+plotcp(modelForPruning)
+prunTree<- prune(modelForPruning, cp= modelForPruning$cptable[which.min(modelForPruning$cptable[,"xerror"]),"CP"])
+plot(prunTree, uniform=TRUE, main="Pruned Classification Tree")
+text(prunTree, cex = 0.5)
+                                                                            
+mean(modelForPruning==g_test1$RESPONSE)
+plot(modelForPruning, uniform=TRUE,  main="Decision Tree for German Credit History rating")
+text(modelForPruning, use.n=TRUE, all=TRUE, cex=.7)
+library(rpart.plot)
+rpart.plot::prp(modelForPruning, type=2, extra=1)
+##Question 6
+###Calculating the Profits and cumulative profits
+library(dplyr)
+PROFITVAL=100
+COSTVAL=-500
+
+scoreTst=predict(rpModel2, GermanCreditTrn, type="prob")[,'1']
+prLifts=data.frame(scoreTst)
+prLifts=cbind(prLifts, GermanCreditTrn$RESPONSE)
+# head(prLifts)
+                                                                            
+prLifts=prLifts[order(-scoreTst) ,]  #sort by descending score
+                                                                            
+#add cumulative and profit  columns
+prLifts<-prLifts %>% mutate(profits=ifelse(prLifts$`GermanCreditTrn$RESPONSE`=='1', PROFITVAL, COSTVAL), cumProfits=cumsum(profits))
+head(prLifts)
+plot(prLifts$cumProfits)
+                                                                            
+mean(scoreTst==prLifts$cumProfits)
+                                                                            
+#Calculate score
+maxProfit= max(prLifts$cumProfits)
+maxProfit_Ind = which.max(prLifts$cumProfits)
+maxProfit_score = prLifts$scoreTst[maxProfit_Ind]
+print(c(maxProfit = maxProfit, scoreTst = maxProfit_score))
+maxProfit= max(prLifts$cumProfits)
+maxProfit_Ind = which.max(prLifts$cumProfits)
+maxProfit_score = prLifts$scoreTst[maxProfit_Ind]
+print(c(maxProfit = maxProfit, scoreTst = maxProfit_score))
 
 
 
 
-
-
-
-
-
-
-
-
-
+###############################
 # Question 7
 
 nr=nrow(GermanCredit) # gets the number of rows
-trnIndex = sample(1:nr, size = round(0.5*nr), replace=FALSE) #get a random 50%sample of row-indices
+trnIndex = sample(1:nr, size = round(0.7*nr), replace=FALSE) #get a random 70%sample of row-indices
 Trn=GermanCredit[trnIndex,]   #training data with the randomly selected row-indices
 Tst = GermanCredit[-trnIndex,]  #test data with the other row-indices
 dim(GermanCreditTrn) 
@@ -830,33 +969,43 @@ set.seed(123)
 
 #develop a training model with 200 trees, and obtain variable importance
 #check the model -- see what OOB error rate it gives
-rfModel = randomForest(RESPONSE ~ ., data=Trn, ntree=200, importance=TRUE )
+rfModel1 = randomForest(RESPONSE ~ ., data=Trn, ntree=200,mtry=6, importance=TRUE )
+rfModel
+rfModel2 = randomForest(RESPONSE ~ ., data=Trn, ntree=400,mtry=6, importance=TRUE )
+rfModel
+rfModel3 = randomForest(RESPONSE ~ ., data=Trn, ntree=500,mtry=6, importance=TRUE )
+rfModel3
 
 
 
-#develop a test model with 200 trees, and obtain variable importance
+
+?randomForest
+
+#develop a test model with 500 trees, and obtain variable importance
 #check the model -- see what OOB error rate it gives
-rfModel2 = randomForest(RESPONSE ~ ., data=Tst, ntree=200, importance=TRUE )
+rfModel5 = randomForest(RESPONSE ~ ., data=Tst, ntree=500,mtry=6, importance=TRUE )
+rfModel5
 
 
 #Variable importance
-importance(rfModel)
-varImpPlot(rfModel)
+importance(rfModel5)
+varImpPlot(rfModel5)
 
 
 
 
 #Draw the ROC curve for the randomForest model
-perf_rfTst=performance(prediction(predict(rfModel,Tst, type="prob")[,2], Tst$RESPONSE), "tpr", "fpr")
+perf_rfTst=performance(prediction(predict(rfModel3,Tst, type="prob")[,2], Tst$RESPONSE), "tpr", "fpr")
 plot(perf_rfTst)
 
 #ROC curves for the decision-tree model and the random forest model in the same plot 
 
 perfROC_dt1Tst=performance(prediction(predict(rpModel1,Tst, type="prob")[,2],Tst$RESPONSE), "tpr", "fpr")
 perfRoc_dt2Tst=performance(prediction(predict(rpModel2_pruned,Tst, type="prob")[,2], Tst$RESPONSE), "tpr", "fpr")
-perfRoc_rfTst=performance(prediction(predict(rfModel,Tst, type="prob")[,2], Tst$RESPONSE), "tpr", "fpr")
+perfRoc_rfTst=performance(prediction(predict(rfModel3,Tst, type="prob")[,2], Tst$RESPONSE), "tpr", "fpr")
 
 plot(perfROC_dt1Tst, col='red')
 plot(perfRoc_dt2Tst, col='blue', add=TRUE)
 plot(perfRoc_rfTst, col='green', add=TRUE)
 legend('bottomright', c('DecisionTree-1', 'DecisionTree-2', 'RandomForest'), lty=1, col=c('red', 'blue', 'green'))
+
